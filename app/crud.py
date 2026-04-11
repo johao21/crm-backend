@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from models import Usuario, Lead
+from app.models import Usuario, Lead
+from app.schemas import UsuarioCreate, UsuarioLogin, Token
 import bleach
 
 

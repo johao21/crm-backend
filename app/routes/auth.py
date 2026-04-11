@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 import traceback
 
-from database import get_db
-from schemas import UsuarioCreate, UsuarioLogin, Token
-import crud
-from security import (
+from app.database import get_db
+from app.schemas import UsuarioCreate, UsuarioLogin, Token
+from app import crud
+from app.security import (
     hash_password,
     verify_password,
     create_access_token,

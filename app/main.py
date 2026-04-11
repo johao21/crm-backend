@@ -7,9 +7,9 @@ from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from database import Base, engine
+from app.database import Base, engine
 import models
-from routes import auth, leads
+from app.routes import auth, leads
 from rate_limiter import limiter
 
 load_dotenv()

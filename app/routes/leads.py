@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from database import get_db
-import crud, schemas
-from security import get_current_user, require_admin
+from app.database import get_db
+from app.schemas import UsuarioCreate, UsuarioLogin, Token
+from app import crud
+from app.security import get_current_user, require_admin
 from rate_limiter import limiter
 
 router = APIRouter(prefix="/leads", tags=["Leads"])

@@ -2,18 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas import UsuarioCreate, UsuarioLogin, Token
-from app import crud
+from app import crud, schemas
 from app.security import get_current_user, require_admin
-from rate_limiter import limiter
+from app.rate_limiter import limiter
 
 router = APIRouter(prefix="/leads", tags=["Leads"])
 
 
-# =========================
-# CREACIÓN PÚBLICA DE LEAD
-# =========================
-# Pública, pero con rate limiting fuerte.
 @router.post("/")
 @limiter.limit("5/minute")
 def create_lead(
@@ -23,8 +18,6 @@ def create_lead(
 ):
     nuevo_lead = crud.create_lead(db, lead)
 
-    # No devolver el ID interno.
-    # Si quieres, puedes devolver el UUID público.
     return {
         "message": "Lead recibido correctamente",
         "tracking_id": nuevo_lead.public_id

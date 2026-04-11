@@ -1,64 +1,78 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Index
-from database import Base
-import uuid
+import os
 
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
-# =========================
-# MODELO DE USUARIO
-# =========================
-class Usuario(Base):
-    __tablename__ = "usuarios"
+from app.database import Base, engine
+from app import models
+from app.routes import auth, leads
+from app.rate_limiter import limiter
 
-    id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, nullable=False)
-    correo = Column(String, unique=True, index=True, nullable=False)
-    password = Column(String, nullable=False)
-    rol = Column(String, default="usuario", nullable=False)
-    puede_crear_usuarios = Column(Boolean, default=False, nullable=False)
+load_dotenv()
 
+Base.metadata.create_all(bind=engine)
 
-# =========================
-# MODELO DE LEAD
-# =========================
-class Lead(Base):
-    __tablename__ = "leads"
+APP_ENV = os.getenv("APP_ENV", "development")
+ENABLE_DOCS = os.getenv("ENABLE_DOCS", "true").lower() == "true"
+FRONTEND_URL = os.getenv("FRONTEND_URL")
 
-    # ID interno
-    id = Column(Integer, primary_key=True, index=True)
+if APP_ENV == "production" and not ENABLE_DOCS:
+    app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
+else:
+    app = FastAPI()
 
-    # ID público
-    public_id = Column(
-        String(36),
-        unique=True,
-        index=True,
-        nullable=False,
-        default=lambda: str(uuid.uuid4())
+if not FRONTEND_URL:
+    FRONTEND_URL = "https://factorysoftware.cl"
+
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+@app.exception_handler(RateLimitExceeded)
+def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Demasiadas solicitudes. Intenta más tarde."}
     )
 
-    nombre = Column(String, nullable=False)
-    telefono = Column(String, nullable=False)
-    correo = Column(String, nullable=True)
-    rut = Column(String, nullable=True)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        FRONTEND_URL,
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
-    servicio = Column(String, nullable=False)
-    nota = Column(String, nullable=False)
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
 
-    estado = Column(String, default="nuevo", index=True)
-    temperatura = Column(String, default="frio")
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "img-src 'self' data: https://fastapi.tiangolo.com; "
+        "font-src 'self' https://cdn.jsdelivr.net; "
+        "frame-ancestors 'none';"
+    )
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-    origen = Column(String, default="web")
-    fecha_creacion = Column(String, nullable=True)
+    return response
 
-    assigned_user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
+app.include_router(auth.router)
+app.include_router(leads.router)
 
-    nota_interna = Column(String, nullable=True)
-    historial_contacto = Column(String, nullable=True)
-
-    presupuesto = Column(String, nullable=True)
-    comuna = Column(String, nullable=True)
-    ciudad = Column(String, nullable=True)
-    urgencia = Column(String, nullable=True)
-    empresa = Column(String, nullable=True)
-
-
-Index("ix_leads_assigned_estado", Lead.assigned_user_id, Lead.estado)
+@app.get("/")
+def root():
+    return {"message": "API funcionando"}

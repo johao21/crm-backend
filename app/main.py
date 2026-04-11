@@ -8,9 +8,9 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.database import Base, engine
-import models
+from app import models
 from app.routes import auth, leads
-from rate_limiter import limiter
+from app.rate_limiter import limiter
 
 load_dotenv()
 
@@ -59,12 +59,12 @@ async def add_security_headers(request: Request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     response.headers["Content-Security-Policy"] = (
-    "default-src 'self'; "
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
-    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-    "img-src 'self' data: https://fastapi.tiangolo.com; "
-    "font-src 'self' https://cdn.jsdelivr.net; "
-    "frame-ancestors 'none';"
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        "img-src 'self' data: https://fastapi.tiangolo.com; "
+        "font-src 'self' https://cdn.jsdelivr.net; "
+        "frame-ancestors 'none';"
     )
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 

@@ -18,15 +18,11 @@ Base.metadata.create_all(bind=engine)
 
 APP_ENV = os.getenv("APP_ENV", "development")
 ENABLE_DOCS = os.getenv("ENABLE_DOCS", "true").lower() == "true"
-FRONTEND_URL = os.getenv("FRONTEND_URL")
 
 if APP_ENV == "production" and not ENABLE_DOCS:
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 else:
     app = FastAPI()
-
-if not FRONTEND_URL:
-    FRONTEND_URL = "https://factorysoftware.cl"
 
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
@@ -38,16 +34,18 @@ def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         content={"detail": "Demasiadas solicitudes. Intenta más tarde."}
     )
 
+# CORS fijo y explícito
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        FRONTEND_URL,
+        "https://factorysoftware.cl",
+        "https://www.factorysoftware.cl",
         "http://localhost:4200",
         "http://127.0.0.1:4200",
     ],
     allow_credentials=True,
-    allow_methods=["*"],      # 🔥 importante
-    allow_headers=["*"],      # 🔥 ESTE ES EL FIX REAL
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.middleware("http")

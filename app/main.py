@@ -46,8 +46,8 @@ app.add_middleware(
         "http://127.0.0.1:4200",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],      # 🔥 importante
+    allow_headers=["*"],      # 🔥 ESTE ES EL FIX REAL
 )
 
 @app.middleware("http")

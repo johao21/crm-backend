@@ -7,9 +7,13 @@ class LeadCreate(BaseModel):
     telefono: str = Field(..., min_length=6, max_length=20)
     correo: Optional[EmailStr] = None
     rut: Optional[str] = Field(default=None, max_length=20)
+
     servicio: str = Field(..., min_length=2, max_length=100)
     nota: str = Field(..., min_length=3, max_length=1000)
+
     origen: Optional[str] = Field(default="web", max_length=50)
+    fecha_creacion: Optional[str] = Field(default=None, max_length=100)
+
     presupuesto: Optional[str] = Field(default=None, max_length=50)
     comuna: Optional[str] = Field(default=None, max_length=100)
     ciudad: Optional[str] = Field(default=None, max_length=100)
